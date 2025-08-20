@@ -12,7 +12,7 @@ local PickUpModule = require(
 
 -- List of allowed pet types
 local ALLOWED_PET_TYPES = { "dog", "bunny", "mimic octopus", "disco bee", "raccoon", "kitsune",
-	"butterfly", "spinosaurus", "dragonfly", "queen bee", "night owl", "t-rex", "bunny" }
+	"butterfly", "spinosaurus", "dragonfly", "queen bee", "night owl", "t-rex", "bunny", "french fry ferret", "blood owl", "chicken zombie", "hyacinth macaw", "dilophosaurus", "spaghetti sloth"}
 
 local function debugPrint(...)
 	print(DEBUG_TAG, ...)
@@ -143,3 +143,4 @@ task.spawn(function()
 		pickUpPlacedPets()
 	end
 end)
+
