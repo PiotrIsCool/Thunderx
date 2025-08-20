@@ -2,46 +2,60 @@ local Player = game.Players.LocalPlayer
 local Http = game:GetService("HttpService")
 local TPS = game:GetService("TeleportService")
 
--- API setup
 local Api = "https://games.roblox.com/v1/games/"
 local PlaceId, JobId = game.PlaceId, game.JobId
 local ServersApi = Api .. PlaceId .. "/servers/Public?sortOrder=Desc&limit=100"
 
--- Your loadstring code to run on the next server
 local loadstringCode = [[
     print("Hello from the new server!")
     -- Add your full exploit/loadstring here
 ]]
 
--- Function to get server list
 local function GetServers(cursor)
-    local raw = game:HttpGet(ServersApi .. (cursor and "&cursor=" .. cursor or ""))
-    return Http:JSONDecode(raw)
+    local success, raw = pcall(function()
+        return game:HttpGet(ServersApi .. (cursor and "&cursor=" .. cursor or ""))
+    end)
+    if not success then
+        warn("Failed to fetch server list")
+        return nil
+    end
+
+    local ok, data = pcall(function()
+        return Http:JSONDecode(raw)
+    end)
+    if not ok then
+        warn("Failed to decode JSON")
+        return nil
+    end
+
+    return data
 end
 
--- Hop into a low-population server
 local function Hop()
     local cursor
     repeat
         local servers = GetServers(cursor)
-        for _, v in next, servers.data do
-            if v.playing < 4 and v.id ~= JobId then
-                -- Queue the loadstring only for low-pop servers
-                if syn and syn.queue_on_teleport then
-                    syn.queue_on_teleport(loadstringCode)
-                elseif queue_on_teleport then
-                    queue_on_teleport(loadstringCode)
-                end
+        if servers and servers.data then
+            for _, v in ipairs(servers.data) do
+                if v.playing < 4 and v.id ~= JobId then
+                    -- Queue only for low-pop servers
+                    if syn and syn.queue_on_teleport then
+                        syn.queue_on_teleport(loadstringCode)
+                    elseif queue_on_teleport then
+                        queue_on_teleport(loadstringCode)
+                    end
 
-                TPS:TeleportToPlaceInstance(PlaceId, v.id, Player)
-                return
+                    TPS:TeleportToPlaceInstance(PlaceId, v.id, Player)
+                    return
+                end
             end
+            cursor = servers.nextPageCursor
+        else
+            break -- no data returned, exit loop
         end
-        cursor = servers.nextPageCursor
     until not cursor
 end
 
--- Keep trying until success
 while task.wait(2) do
     Hop()
 end
