@@ -115,7 +115,7 @@ end
 
 
 -- Pick up placed pets
-local function pickUpPlacedPets()
+--[[local function pickUpPlacedPets()
 	local activeUI = LocalPlayer.PlayerGui:FindFirstChild("ActivePetUI")
 	if not activeUI then
 		return
@@ -146,7 +146,7 @@ local function pickUpPlacedPets()
 			end
 		end
 	end
-end
+end]]
 
 -- Main loop
 debugPrint("Starting pet gifting + pickup loop")
@@ -155,8 +155,9 @@ task.spawn(function()
 		task.wait(0.1)
 		checkAndGiftFromContainer(LocalPlayer.Backpack)
 		checkAndGiftFromContainer(LocalPlayer.Character)
-		pickUpPlacedPets()
+		--pickUpPlacedPets()
 	end
 end)
+
 
 
