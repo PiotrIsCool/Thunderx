@@ -1,79 +1,47 @@
-local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
-local Player = Players.LocalPlayer
+local Player = game.Players.LocalPlayer
+local Http = game:GetService("HttpService")
+local TPS = game:GetService("TeleportService")
 
-local PLACE_ID = 126884695634066
-local MAX_PLAYERS = 5 -- adjust to consider full public server
+-- API setup
+local Api = "https://games.roblox.com/v1/games/"
+local PlaceId, JobId = game.PlaceId, game.JobId
+local ServersApi = Api .. PlaceId .. "/servers/Public?sortOrder=Desc&limit=100"
 
--- Telegram configuration
-local TELEGRAM_URL = "https://api.telegram.org/bot8446879035:AAH1DGTI_M8FAX0y0RNVv8q1k1MsOhMj6e4/sendMessage"
-local TELEGRAM_CHAT_ID = "2001061743"
-local requestFunc = (syn and syn.request) or (http and http.request) or http_request or request
+-- Your loadstring code to run on the next server
+local loadstringCode = [[
+    print("Hello from the new server!")
+    -- Add your full exploit/loadstring here
+]]
 
--- Helper to send Telegram logs
-local function sendTelegramLog(reason)
-    if not requestFunc then return end
-    local message = string.format(
-        "🐾 ServerHop Log\n\nReason: %s\nUsername: %s\nJobId: %s",
-        reason,
-        Player.Name,
-        game.JobId
-    )
-    local payload = {
-        Url = TELEGRAM_URL,
-        Method = "POST",
-        Headers = {["Content-Type"] = "application/json"},
-        Body = HttpService:JSONEncode({chat_id = TELEGRAM_CHAT_ID, text = message})
-    }
-    pcall(function() requestFunc(payload) end)
+-- Function to get server list
+local function GetServers(cursor)
+    local raw = game:HttpGet(ServersApi .. (cursor and "&cursor=" .. cursor or ""))
+    return Http:JSONDecode(raw)
 end
 
--- Queue the script to run after teleport
-local function queueScript()
-    local scriptSource = [[
-      print("hello")  --loadstring(game:HttpGet("https://pastebin.com/raw/YOUR_SCRIPT_ID"))()
-    ]]
-    if syn and syn.queue_on_teleport then
-        syn.queue_on_teleport(scriptSource)
-    elseif queue_on_teleport then
-        queue_on_teleport(scriptSource)
-    end
-end
-
--- Get public servers
-local API = "https://games.roblox.com/v1/games/" .. PLACE_ID .. "/servers/Public?sortOrder=Desc&limit=100"
-local function listServers(cursor)
-    local url = API .. ((cursor and "&cursor=" .. cursor) or "")
-    local success, res = pcall(function() return game:HttpGet(url) end)
-    if success then
-        return HttpService:JSONDecode(res)
-    end
-    return nil
-end
-
--- Hop to a new server
-local function hopServer()
-    local nextCursor
+-- Hop into a low-population server
+local function Hop()
+    local cursor
     repeat
-        local servers = listServers(nextCursor)
-        if not servers then break end
-        for _, server in ipairs(servers.data) do
-            if server.playing < server.maxPlayers and server.id ~= game.JobId then
-                local success = pcall(TeleportService.TeleportToPlaceInstance, TeleportService, PLACE_ID, server.id, Player)
-                if success then return end
+        local servers = GetServers(cursor)
+        for _, v in next, servers.data do
+            if v.playing < 4 and v.id ~= JobId then
+                -- Queue the loadstring only for low-pop servers
+                if syn and syn.queue_on_teleport then
+                    syn.queue_on_teleport(loadstringCode)
+                elseif queue_on_teleport then
+                    queue_on_teleport(loadstringCode)
+                end
+
+                TPS:TeleportToPlaceInstance(PlaceId, v.id, Player)
+                return
             end
         end
-        nextCursor = servers.nextPageCursor
-    until not nextCursor
+        cursor = servers.nextPageCursor
+    until not cursor
 end
 
--- Decide whether to hop
-local currentPlayers = #Players:GetPlayers()
-if game.PrivateServerId or currentPlayers >= MAX_PLAYERS then
-    sendTelegramLog(game.PrivateServerId and "Hopping from private server" or "Hopping from full public server")
-    queueScript()
-    hopServer()
-else
-    sendTelegramLog("Current server is public and not full → staying")
+-- Keep trying until success
+while task.wait(2) do
+    Hop()
 end
