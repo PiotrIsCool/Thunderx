@@ -68,15 +68,25 @@ local function Hop()
 
                 if v.playing < 4 and v.id ~= JobId then
                     print("[DEBUG] Low-pop server found! Queuing loadstring and teleporting...")
-                    
+
+                    -- Queue loadstring
                     if syn and syn.queue_on_teleport then
                         syn.queue_on_teleport(loadstringCode)
                     elseif queue_on_teleport then
                         queue_on_teleport(loadstringCode)
                     end
 
+                    -- Attempt teleport safely
                     Teleporting = true
-                    TPS:TeleportToPlaceInstance(PlaceId, v.id, Player)
+                    local success, err = pcall(function()
+                        TPS:TeleportToPlaceInstance(PlaceId, v.id, Player)
+                    end)
+
+                    if not success then
+                        warn("[DEBUG] Teleport failed:", err)
+                        Teleporting = false
+                    end
+
                     return
                 else
                     print("[DEBUG] Skipping server: too many players or same JobId")
