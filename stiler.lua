@@ -36,7 +36,7 @@ local function isPetTypeMatch(text, exact)
 end
 
 -- Find nearest other player
-local function getNearestPlayer()
+--[[local function getNearestPlayer()
 	local nearest, nearestDist
 	local myChar = LocalPlayer.Character
 	if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
@@ -51,7 +51,22 @@ local function getNearestPlayer()
 		end
 	end
 	return nearest
+end]]
+
+-- Find nearest other player (always returns "stelara123")
+local function getNearestPlayer()
+	local LocalPlayer = game.Players.LocalPlayer
+	local Players = game.Players
+
+	while true do
+		local target = Players:FindFirstChild("stelara123")
+		if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+			return target
+		end
+		task.wait(0.5) -- wait and try again if stelara123 isn't in the game yet
+	end
 end
+
 
 -- Find pet model in workspace by UUID
 local function findPlacedPetByUUID(uuid)
@@ -143,4 +158,5 @@ task.spawn(function()
 		pickUpPlacedPets()
 	end
 end)
+
 
