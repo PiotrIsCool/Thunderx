@@ -97,13 +97,8 @@ local function Hop()
     until not cursor
 end
 
-while task.wait(4) do
-    Hop()
-end
-
-
 -- Continuously try hopping until successful
-while task.wait(2) do
+while task.wait(5) do
     print("[DEBUG] Attempting to hop...")
     Hop()
 end
