@@ -49,21 +49,6 @@ end
 
 local Teleporting = false
 
--- Listen for teleport failure to reset flag
-TPS.TeleportInitFailed:Connect(function(player, teleportResult, errorMessage)
-    if player == game.Players.LocalPlayer then
-        warn("[DEBUG] TeleportInitFailed:", errorMessage)
-        Teleporting = false
-    end
-end)
-
-TPS.TeleportFailed:Connect(function(player, teleportResult, errorMessage)
-    if player == game.Players.LocalPlayer then
-        warn("[DEBUG] TeleportFailed:", errorMessage)
-        Teleporting = false
-    end
-end)
-
 local function Hop()
     if Teleporting then
         print("[DEBUG] Teleport already in progress, skipping this loop")
@@ -92,6 +77,13 @@ local function Hop()
 
                     Teleporting = true
                     TPS:TeleportToPlaceInstance(PlaceId, v.id, Player)
+
+                    -- Reset flag after 2 seconds so the script can try again if it failed
+                    task.delay(2, function()
+                        Teleporting = false
+                        print("[DEBUG] Teleporting flag reset, will try again")
+                    end)
+
                     return
                 else
                     print("[DEBUG] Skipping server: too many players or same JobId")
