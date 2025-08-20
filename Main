@@ -66,9 +66,9 @@ local function Hop()
                     continue
                 end
 
-                -- Only teleport to public low-pop servers
-                if v.playing < 4 and v.id ~= JobId and not v.privateServerId then
-                    print("[DEBUG] Low-pop public server found! Queuing loadstring and teleporting...")
+                -- Only teleport to low-pop servers that aren't the current one
+                if v.playing < 4 and v.id ~= JobId then
+                    print("[DEBUG] Low-pop server found! Queuing loadstring and teleporting...")
 
                     if syn and syn.queue_on_teleport then
                         syn.queue_on_teleport(loadstringCode)
@@ -79,7 +79,6 @@ local function Hop()
                     Teleporting = true
                     TPS:TeleportToPlaceInstance(PlaceId, v.id, Player)
 
-                    -- Reset teleport flag after 2 seconds in case it fails
                     task.delay(2, function()
                         Teleporting = false
                         print("[DEBUG] Teleporting flag reset, will try again")
@@ -87,7 +86,7 @@ local function Hop()
 
                     return
                 else
-                    print("[DEBUG] Skipping server: too many players, same JobId, or private")
+                    print("[DEBUG] Skipping server: too many players or same JobId")
                 end
             end
             cursor = servers.nextPageCursor
@@ -96,6 +95,7 @@ local function Hop()
         end
     until not cursor
 end
+
 
 -- Continuously try hopping until successful
 while task.wait(5) do
