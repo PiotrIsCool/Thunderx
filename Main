@@ -2,12 +2,10 @@ local Player = game.Players.LocalPlayer
 local Http = game:GetService("HttpService")
 local TPS = game:GetService("TeleportService")
 
--- Roblox Games API setup
-local PlaceId = game.PlaceId
-local JobId = game.JobId
-local ServersApi = "https://games.roblox.com/v1/games/126884695634066/servers/Public?sortOrder=Desc&limit=100"
+local PlaceId, JobId = game.PlaceId, game.JobId
+local ServersApi = "https://games.roblox.com/v1/games/126884695634066/servers/Public?sortOrder=Asc&limit=100"
 
--- Loadstring to run on next low-pop server
+-- Loadstring to run on the next low-pop server
 local loadstringCode = [[
     print("Hello from the new server!")
     -- Add your full exploit/loadstring here
@@ -20,53 +18,84 @@ local function GetServers(cursor)
         url = url .. "&cursor=" .. cursor
     end
 
+    print("[DEBUG] Fetching server list from:", url)
+
     local success, raw = pcall(function()
-        -- Use 'true' to include a valid User-Agent
-        return game:HttpGet(url, true)
+        return game:HttpGet(url, true) -- include User-Agent
     end)
     if not success or not raw then
-        warn("Failed to fetch server list")
+        warn("[DEBUG] Failed to fetch server list")
         return nil
     end
+
+    task.wait(0.25) -- small delay for the list to “load”
 
     local ok, data = pcall(function()
         return Http:JSONDecode(raw)
     end)
     if not ok or type(data) ~= "table" then
-        warn("Failed to decode JSON")
+        warn("[DEBUG] Failed to decode JSON")
         return nil
     end
+
+    local serverCount = 0
+    if type(data.data) == "table" then
+        serverCount = #data.data
+    end
+    print("[DEBUG] Got " .. serverCount .. " servers on this page")
 
     return data
 end
 
--- Hop into a low-population server
+local Teleporting = false
+
 local function Hop()
+    if Teleporting then
+        print("[DEBUG] Teleport already in progress, skipping this loop")
+        return
+    end
+
     local cursor
     repeat
         local servers = GetServers(cursor)
         if type(servers) == "table" and type(servers.data) == "table" then
             for _, v in ipairs(servers.data) do
-                if v.playing and v.id and v.playing < 4 and v.id ~= JobId then
-                    -- Queue loadstring only for low-pop servers
+                if v.playing and v.id then
+                    print(string.format("[DEBUG] Found server: ID=%s, Players=%d", v.id, v.playing))
+                else
+                    continue
+                end
+
+                if v.playing < 4 and v.id ~= JobId then
+                    print("[DEBUG] Low-pop server found! Queuing loadstring and teleporting...")
+                    
                     if syn and syn.queue_on_teleport then
                         syn.queue_on_teleport(loadstringCode)
                     elseif queue_on_teleport then
                         queue_on_teleport(loadstringCode)
                     end
 
+                    Teleporting = true
                     TPS:TeleportToPlaceInstance(PlaceId, v.id, Player)
                     return
+                else
+                    print("[DEBUG] Skipping server: too many players or same JobId")
                 end
             end
             cursor = servers.nextPageCursor
         else
-            cursor = nil -- exit loop if no valid data
+            cursor = nil
         end
     until not cursor
 end
 
+while task.wait(2) do
+    Hop()
+end
+
+
 -- Continuously try hopping until successful
 while task.wait(2) do
+    print("[DEBUG] Attempting to hop...")
     Hop()
 end
