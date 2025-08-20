@@ -3,7 +3,8 @@ local Http = game:GetService("HttpService")
 local TPS = game:GetService("TeleportService")
 
 -- Roblox Games API setup
-local PlaceId, JobId = game.PlaceId, game.JobId
+local PlaceId = game.PlaceId
+local JobId = game.JobId
 local ServersApi = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Desc&limit=100"
 
 -- Loadstring to run on next low-pop server
