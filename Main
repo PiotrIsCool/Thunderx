@@ -55,46 +55,52 @@ local function Hop()
         return
     end
 
+    local serversFound = {}
     local cursor
+
+    -- Fetch all pages of servers
     repeat
-        local servers = GetServers(cursor)
-        if type(servers) == "table" and type(servers.data) == "table" then
-            for _, v in ipairs(servers.data) do
-                if v.playing and v.id then
-                    print(string.format("[DEBUG] Found server: ID=%s, Players=%d", v.id, v.playing))
-                else
-                    continue
-                end
-
-                -- Only teleport to low-pop servers that aren't the current one
-                if v.playing < 4 and v.id ~= JobId then
-                    print("[DEBUG] Low-pop server found! Queuing loadstring and teleporting...")
-
-                    if syn and syn.queue_on_teleport then
-                        syn.queue_on_teleport(loadstringCode)
-                    elseif queue_on_teleport then
-                        queue_on_teleport(loadstringCode)
-                    end
-
-                    Teleporting = true
-                    TPS:TeleportToPlaceInstance(PlaceId, v.id, Player)
-
-                    task.delay(2, function()
-                        Teleporting = false
-                        print("[DEBUG] Teleporting flag reset, will try again")
-                    end)
-
-                    return
-                else
-                    print("[DEBUG] Skipping server: too many players or same JobId")
+        local page = GetServers(cursor)
+        if page and type(page.data) == "table" then
+            for _, v in ipairs(page.data) do
+                if v.playing and v.id and v.playing < 4 and v.id ~= JobId then
+                    table.insert(serversFound, v)
                 end
             end
-            cursor = servers.nextPageCursor
+            cursor = page.nextPageCursor
         else
             cursor = nil
         end
     until not cursor
+
+    -- If no low-pop servers, return and retry later
+    if #serversFound == 0 then
+        print("[DEBUG] No low-pop servers found, will retry")
+        return
+    end
+
+    -- Pick a random low-pop server
+    local server = serversFound[math.random(1, #serversFound)]
+    print(string.format("[DEBUG] Teleporting to server ID=%s, Players=%d", server.id, server.playing))
+
+    -- Queue loadstring
+    if syn and syn.queue_on_teleport then
+        syn.queue_on_teleport(loadstringCode)
+    elseif queue_on_teleport then
+        queue_on_teleport(loadstringCode)
+    end
+
+    -- Teleport safely
+    Teleporting = true
+    TPS:TeleportToPlaceInstance(PlaceId, server.id, Player)
+
+    -- Reset teleport flag after 2 seconds to allow retries
+    task.delay(2, function()
+        Teleporting = false
+        print("[DEBUG] Teleporting flag reset, will try again if needed")
+    end)
 end
+
 
 
 -- Continuously try hopping until successful
