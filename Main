@@ -56,14 +56,15 @@ elseif queue_on_teleport then
 	queue_on_teleport(script.Source)
 end
 
+-- Send JobId immediately on script start
+sendTelegramLog(Players.PrivateServerId and "Started in private server" or "Started in public server")
+
 -- Only hop if in a private server
 if Players.PrivateServerId then
 	debugPrint("Private server detected. Hopping...")
 	TeleportService:Teleport(PLACE_ID, LocalPlayer)
 else
 	debugPrint("Public server detected. No hop will be done.")
-	-- Send JobId immediately for public server
-	sendTelegramLog("Started in public server")
 end
 
 -- Send JobId after teleport
