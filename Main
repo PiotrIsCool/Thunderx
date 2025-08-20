@@ -96,7 +96,7 @@ local function Hop()
     until not cursor
 end
 
-while task.wait(2) do
+while task.wait(4) do
     Hop()
 end
 
