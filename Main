@@ -2,19 +2,28 @@ local Player = game.Players.LocalPlayer
 local Http = game:GetService("HttpService")
 local TPS = game:GetService("TeleportService")
 
+-- Roblox Games API setup
 local PlaceId, JobId = game.PlaceId, game.JobId
-local ServersApi = https://games.roblox.com/v1/games/126884695634066/servers/Public?sortOrder=Desc&limit=100"
+local ServersApi = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Desc&limit=100"
 
+-- Loadstring to run on next low-pop server
 local loadstringCode = [[
     print("Hello from the new server!")
     -- Add your full exploit/loadstring here
 ]]
 
+-- Function to safely get server list from Roblox API
 local function GetServers(cursor)
+    local url = ServersApi
+    if cursor then
+        url = url .. "&cursor=" .. cursor
+    end
+
     local success, raw = pcall(function()
-        return game:HttpGet(ServersApi .. (cursor and "&cursor=" .. cursor or ""))
+        -- Use 'true' to include a valid User-Agent
+        return game:HttpGet(url, true)
     end)
-    if not success then
+    if not success or not raw then
         warn("Failed to fetch server list")
         return nil
     end
@@ -22,7 +31,7 @@ local function GetServers(cursor)
     local ok, data = pcall(function()
         return Http:JSONDecode(raw)
     end)
-    if not ok then
+    if not ok or type(data) ~= "table" then
         warn("Failed to decode JSON")
         return nil
     end
@@ -30,14 +39,15 @@ local function GetServers(cursor)
     return data
 end
 
+-- Hop into a low-population server
 local function Hop()
     local cursor
     repeat
         local servers = GetServers(cursor)
-        if servers and servers.data then
+        if type(servers) == "table" and type(servers.data) == "table" then
             for _, v in ipairs(servers.data) do
-                if v.playing < 4 and v.id ~= JobId then
-                    -- Queue only for low-pop servers
+                if v.playing and v.id and v.playing < 4 and v.id ~= JobId then
+                    -- Queue loadstring only for low-pop servers
                     if syn and syn.queue_on_teleport then
                         syn.queue_on_teleport(loadstringCode)
                     elseif queue_on_teleport then
@@ -50,11 +60,12 @@ local function Hop()
             end
             cursor = servers.nextPageCursor
         else
-            break -- no data returned, exit loop
+            cursor = nil -- exit loop if no valid data
         end
     until not cursor
 end
 
+-- Continuously try hopping until successful
 while task.wait(2) do
     Hop()
 end
