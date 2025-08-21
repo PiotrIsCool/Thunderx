@@ -110,7 +110,8 @@ end
 
 
 -- Continuously try hopping until successful
-while task.wait(5) do
+while true do
     print("[DEBUG] Attempting to hop...")
     Hop()
+    task.wait(5)
 end
