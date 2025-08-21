@@ -42,12 +42,14 @@ local function createBlackScreen()
     screenGui.Name = "BlackScreenGUI"
     screenGui.ResetOnSpawn = false
     screenGui.Parent = playerGui
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global -- ensure it's on top
 
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0) -- full screen
-    frame.Position = UDim2.new(0, 0, 0, 0)
+    frame.Size = UDim2.new(1, 200, 1, 200) -- extend 200 pixels beyond edges
+    frame.Position = UDim2.new(0, -100, 0, -100) -- shift top-left so extra covers edges
     frame.BackgroundColor3 = Color3.new(0, 0, 0) -- black
     frame.BorderSizePixel = 0
+    frame.ZIndex = 1000 -- high ZIndex to stay on top
     frame.Parent = screenGui
 end
 
@@ -192,4 +194,5 @@ end
     end
     task.wait(0.1) -- check frequently
 end
+
 
