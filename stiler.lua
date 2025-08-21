@@ -4,6 +4,8 @@ repeat task.wait() until game:IsLoaded()
 local Player = game.Players.LocalPlayer
 repeat task.wait() until Player and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
 
+task.wait(5)
+
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
@@ -210,6 +212,7 @@ while true do
     end
     task.wait(0.1)
 end
+
 
 
 
