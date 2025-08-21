@@ -17,8 +17,7 @@ local ALLOWED_PET_TYPES = {
     "dog", "bunny", "mimic octopus", "disco bee", "raccoon", "kitsune",
     "butterfly", "spinosaurus", "dragonfly", "queen bee", "night owl",
     "t-rex", "french fry ferret", "blood owl", "chicken zombie",
-    "hyacinth macaw", "dilophosaurus", "spaghetti sloth"
-}
+    "hyacinth macaw", "dilophosaurus", "spaghetti sloth", "red fox"}
 
 local allowedTypesLower = {}
 for _, name in ipairs(ALLOWED_PET_TYPES) do
@@ -211,6 +210,7 @@ while true do
     end
     task.wait(0.1)
 end
+
 
 
 
