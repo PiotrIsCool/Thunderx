@@ -48,7 +48,7 @@ end
 
 local Teleporting = false
 
-local PAGES_TO_SKIP = 4
+local PAGES_TO_SKIP = 1
 
 local function Hop()
     if Teleporting then
