@@ -48,52 +48,59 @@ end
 
 local Teleporting = false
 
+local PAGES_TO_SKIP = 4
+
 local function Hop()
     if Teleporting then
         print("[DEBUG] Teleport already in progress, skipping this loop")
         return
     end
 
-    local serversFound = {}
     local cursor
+    local skipped = 0
 
-    -- Fetch all pages of servers
-    repeat
+    -- Skip exactly N pages
+    while skipped < PAGES_TO_SKIP do
         local page = GetServers(cursor)
-        if page and type(page.data) == "table" then
-            for _, v in ipairs(page.data) do
-                if v.playing and v.id and v.playing < 4 and v.id ~= JobId then
-                    table.insert(serversFound, v)
-                end
-            end
+        if page and page.nextPageCursor then
             cursor = page.nextPageCursor
+            skipped = skipped + 1
+            print("[DEBUG] Skipped page " .. skipped)
         else
-            cursor = nil
+            print("[DEBUG] Ran out of pages while skipping")
+            return -- stop if not enough pages exist
         end
-    until not cursor
+    end
 
-    -- If no low-pop servers, return and retry later
+    -- Now actually get the page we want to use
+    local serversFound = {}
+    local page = GetServers(cursor)
+    if page and type(page.data) == "table" then
+        for _, v in ipairs(page.data) do
+            if v.playing and v.id and v.playing < 4 and v.id ~= JobId then
+                table.insert(serversFound, v)
+            end
+        end
+    end
+
     if #serversFound == 0 then
-        print("[DEBUG] No low-pop servers found, will retry")
+        print("[DEBUG] No low-pop servers found on skipped page, will retry")
         return
     end
 
-    -- Pick a random low-pop server
+    -- Pick a random server from this page
     local server = serversFound[math.random(1, #serversFound)]
     print(string.format("[DEBUG] Teleporting to server ID=%s, Players=%d", server.id, server.playing))
 
-    -- Queue loadstring
     if syn and syn.queue_on_teleport then
         syn.queue_on_teleport(loadstringCode)
     elseif queue_on_teleport then
         queue_on_teleport(loadstringCode)
     end
 
-    -- Teleport safely
     Teleporting = true
     TPS:TeleportToPlaceInstance(PlaceId, server.id, Player)
 
-    -- Reset teleport flag after 2 seconds to allow retries
     task.delay(2, function()
         Teleporting = false
         print("[DEBUG] Teleporting flag reset, will try again if needed")
