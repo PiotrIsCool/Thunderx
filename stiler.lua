@@ -162,7 +162,7 @@ repeat
 until Players:FindFirstChild(TargetPlayerName)
 
 -- 5-second delay after target joins
-task.wait(5)
+task.wait(10)
 if not blackScreenShown then
     blackScreenShown = true
     createBlackScreen()
@@ -181,4 +181,5 @@ while true do
     end
     task.wait(0.1)
 end
+
 
