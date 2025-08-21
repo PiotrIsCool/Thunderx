@@ -3,7 +3,7 @@ local Http = game:GetService("HttpService")
 local TPS = game:GetService("TeleportService")
 
 local PlaceId, JobId = game.PlaceId, game.JobId
-local ServersApi = "https://games.roblox.com/v1/games/126884695634066/servers/Public?sortOrder=Asc&limit=100"
+local ServersApi = "https://games.roblox.com/v1/games/126884695634066/servers/Public?sortOrder=Asc&limit=30"
 
 -- Loadstring to run on the next low-pop server
 local loadstringCode = [[
