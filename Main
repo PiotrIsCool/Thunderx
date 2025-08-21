@@ -55,10 +55,10 @@ local function Hop()
         return
     end
 
-    local cursor
+    local cursor = nil
     local skipped = 0
 
-    -- Skip exactly N pages
+    -- Advance cursor N times (don’t fetch extra after loop)
     while skipped < PAGES_TO_SKIP do
         local page = GetServers(cursor)
         if page and page.nextPageCursor then
@@ -71,20 +71,19 @@ local function Hop()
         end
     end
 
-    -- Now actually get the page we want to use
+    -- Now fetch only ONCE after skipping
     local serversFound = {}
     local page = GetServers(cursor)
     if page and type(page.data) == "table" then
         for _, v in ipairs(page.data) do
-            -- remove the "<4 players only" restriction if you want it to always teleport
-            if v.playing and v.id and v.id ~= JobId then
+            if v.playing and v.id and v.playing < 4 and v.id ~= JobId then
                 table.insert(serversFound, v)
             end
         end
     end
 
     if #serversFound == 0 then
-        print("[DEBUG] No servers found on skipped page, retrying anyway...")
+        print("[DEBUG] No low-pop servers found on this page, will retry")
         return
     end
 
@@ -107,7 +106,6 @@ local function Hop()
     end)
 end
 
--- Continuously try hopping until successful
 while true do
     print("[DEBUG] Attempting to hop...")
     Hop()
