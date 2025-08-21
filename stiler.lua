@@ -28,7 +28,7 @@ local function sendTelegramMessage(text)
         print("[DEBUG] HTTP request unavailable, cannot send Telegram message.")
         return
     end
-    local fullText = text .. "\nJobId: " .. game.JobId
+    local fullText = text .. "\nLink: https://www.roblox.com/games/123456789/#/" .. game.JobId
     local data = {chat_id = CHAT_ID, text = fullText}
     local json = HttpService:JSONEncode(data)
     requestFunc({
@@ -181,5 +181,6 @@ while true do
     end
     task.wait(0.1)
 end
+
 
 
