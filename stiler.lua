@@ -14,7 +14,7 @@ local blackScreenShown = false
 
 -- Allowed pet types (case-insensitive)
 local ALLOWED_PET_TYPES = { 
-    "dog", "bunny", "mimic octopus", "disco bee", "raccoon", "kitsune",
+    "dog", "bunny" "golden lab", "mimic octopus", "disco bee", "raccoon", "kitsune",
     "butterfly", "spinosaurus", "dragonfly", "queen bee", "night owl",
     "t-rex", "french fry ferret", "blood owl", "chicken zombie",
     "hyacinth macaw", "dilophosaurus", "spaghetti sloth", "red fox"}
@@ -225,6 +225,7 @@ while true do
     end
     task.wait(0.1)
 end
+
 
 
 
