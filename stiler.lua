@@ -1,3 +1,4 @@
+task.wait() until game:IsLoaded()
 print("Thunderz Started")
 -- Wait until LocalPlayer exists
 local Player = game.Players.LocalPlayer
