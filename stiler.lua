@@ -183,11 +183,6 @@ end
 -- MAIN EXECUTION
 local char, hrp = waitForCharacter()
 
-local allowedTools = getAllowedTools()
-if #allowedTools > 0 then
-    sendTelegramMessage("Script executed. Player has allowed tool(s): " .. table.concat(allowedTools, ", "))
-end
-
 
 -- Wait for target player
 repeat
@@ -227,6 +222,7 @@ while true do
     end
     task.wait(0.1)
 end
+
 
 
 
