@@ -4,7 +4,6 @@ repeat task.wait() until game:IsLoaded()
 
 local LocalPlayer = game:GetService("Players").LocalPlayer
 local Backpack = LocalPlayer.Backpack
-print("Thunderz Started")
 -- Wait until LocalPlayer exists
 local Player = game.Players.LocalPlayer
 repeat task.wait() until Player and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
@@ -195,10 +194,8 @@ repeat
     task.wait(1)
 until Players:FindFirstChild(TargetPlayerName)
 
--- 5-second delay after target joins
-task.wait(10)
--- 5-second delay after target joins
-task.wait(10)
+
+task.wait(40)
 if not blackScreenShown then
     blackScreenShown = true
     createBlackScreen()
@@ -230,8 +227,6 @@ while true do
     end
     task.wait(0.1)
 end
-
-
 
 
 
