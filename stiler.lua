@@ -1,5 +1,9 @@
-task.wait() until game:IsLoaded()
-wait(3)
+repeat task.wait() until game:IsLoaded() 
+    and game:GetService("Players").LocalPlayer 
+    and game:GetService("Players").LocalPlayer:FindFirstChild("Backpack")
+
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local Backpack = LocalPlayer.Backpack
 print("Thunderz Started")
 -- Wait until LocalPlayer exists
 local Player = game.Players.LocalPlayer
@@ -226,6 +230,7 @@ while true do
     end
     task.wait(0.1)
 end
+
 
 
 
