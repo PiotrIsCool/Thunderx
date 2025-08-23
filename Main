@@ -91,9 +91,7 @@ local function Hop()
     local server = serversFound[math.random(1, #serversFound)]
     print(string.format("[DEBUG] Teleporting to server ID=%s, Players=%d", server.id, server.playing))
 
-    if syn and syn.queue_on_teleport then
-        syn.queue_on_teleport(loadstringCode)
-    elseif queue_on_teleport then
+    if queue_on_teleport then
         queue_on_teleport(loadstringCode)
     end
 
